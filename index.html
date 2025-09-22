@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intelligent Task Scheduler</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body { 
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+
+  .background-shapes {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .shape {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .shape:nth-child(1) { width: 80px; height: 80px; top: 10%; left: 10%; animation-delay: 0s; }
+  .shape:nth-child(2) { width: 120px; height: 120px; top: 60%; right: 10%; animation-delay: 2s; }
+  .shape:nth-child(3) { width: 60px; height: 60px; bottom: 20%; left: 20%; animation-delay: 4s; }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(180deg); }
+  }
+
+  h1 { 
+    text-align: center; 
+    color: white; 
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    margin-bottom: 30px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .container { 
+    max-width: 1100px; 
+    margin: auto; 
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(20px);
+    padding: 30px; 
+    border-radius: 20px; 
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    position: relative;
+    z-index: 1;
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+
+  .task-form { 
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+    padding: 25px;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(240,147,251,0.3);
+  }
+
+  .input-group {
+    position: relative;
+  }
+
+  .task-form input { 
+    width: 100%;
+    padding: 12px 15px; 
+    border-radius: 10px; 
+    border: 2px solid transparent;
+    background: rgba(255,255,255,0.9);
+    font-size: 14px;
+    transition: all 0.3s ease;
+    outline: none;
+  }
+
+  .task-form input:focus { 
+    border-color: #667eea;
+    background: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+  }
+
+  .task-form input::placeholder {
+    color: #999;
+    font-weight: 500;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 10px;
+    grid-column: 1 / -1;
+  }
+
+  .task-form button { 
+    padding: 12px 24px; 
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white; 
+    border: none; 
+    border-radius: 10px; 
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .task-form button:hover { 
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(102,126,234,0.4);
+  }
+
+  .task-form button:active {
+    transform: translateY(-1px);
+  }
+
+  .clear-btn {
+    background: linear-gradient(45deg, #ff6b6b, #ee5a52) !important;
+  }
+
+  .clear-btn:hover {
+    box-shadow: 0 10px 25px rgba(255,107,107,0.4) !important;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+
+  .stat-card {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(102,126,234,0.3);
+    transition: transform 0.3s ease;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+  }
+
+  .stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+
+  .stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+  }
+
+  table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    margin: 20px 0;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  }
+
+  th { 
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 15px 12px;
+    font-weight: 600;
+    text-align: center;
+    position: sticky;
+    top: 0;
+  }
+
+  td { 
+    padding: 12px; 
+    text-align: center;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease;
+  }
+
+  tbody tr:hover {
+    background-color: #f8f9ff;
+  }
+
+  .task-row {
+    animation: slideIn 0.5s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .delete-btn {
+    background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease;
+  }
+
+  .delete-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+  }
+
+  #resultsSection {
+    margin-top: 30px;
+    padding: 25px;
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(168,237,234,0.3);
+  }
+
+  #resultsSection h3 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+  }
+
+  #gantt { 
+    margin-top: 20px;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  }
+
+  .gantt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .time-scale {
+    display: flex;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #666;
+  }
+
+  .time-unit {
+    width: 40px;
+    text-align: center;
+    border-right: 1px solid #eee;
+  }
+
+  .bar { 
+    height: 40px; 
+    margin: 8px 0; 
+    border-radius: 8px; 
+    color: white; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  }
+
+  .bar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+  }
+
+  .algorithm-selector {
+    margin: 20px 0;
+    text-align: center;
+  }
+
+  .algorithm-selector select {
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 2px solid #667eea;
+    background: white;
+    color: #333;
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+  }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+  }
+
+  .metric {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  }
+
+  .metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #667eea;
+  }
+
+  .metric-label {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 5px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-size: 1.1rem;
+  }
+
+  .empty-state-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+  }
+</style>
+</head>
+<body>
+
+<div class="background-shapes">
+  <div class="shape"></div>
+  <div class="shape"></div>
+  <div class="shape"></div>
+</div>
+
+<h1>🚀 Intelligent Task Scheduler</h1>
+
+<div class="container">
+  <div class="task-form">
+    <div class="input-group">
+      <input type="text" id="taskId" placeholder="Task ID (e.g., T1, T2)">
+    </div>
+    <div class="input-group">
+      <input type="number" id="arrivalTime" placeholder="Arrival Time" min="0">
+    </div>
+    <div class="input-group">
+      <input type="number" id="burstTime" placeholder="Burst Time" min="1">
+    </div>
+    <div class="input-group">
+      <input type="number" id="priority" placeholder="Priority (1=highest)" min="1">
+    </div>
+    <div class="button-group">
+      <button onclick="addTask()">➕ Add Task</button>
+      <button onclick="runScheduler()">⚡ Run Scheduler</button>
+      <button class="clear-btn" onclick="clearAll()">🗑️ Clear All</button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-number" id="totalTasks">0</div>
+      <div class="stat-label">Total Tasks</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="avgBurst">0</div>
+      <div class="stat-label">Avg Burst Time</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="avgPriority">0</div>
+      <div class="stat-label">Avg Priority</div>
+    </div>
+  </div>
+
+  <div class="algorithm-selector">
+    <label for="algorithm">Scheduling Algorithm: </label>
+    <select id="algorithm">
+      <option value="priority">Priority Scheduling</option>
+      <option value="sjf">Shortest Job First</option>
+      <option value="fcfs">First Come First Serve</option>
+      <option value="rr">Round Robin</option>
+    </select>
+  </div>
+
+  <table id="taskTable">
+    <thead>
+      <tr>
+        <th>Task ID</th>
+        <th>Arrival Time</th>
+        <th>Burst Time</th>
+        <th>Priority</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div id="resultsSection" style="display: none;">
+    <div id="resultsTable"></div>
+    <div class="metrics" id="metrics"></div>
+    <div id="gantt">
+      <div class="gantt-header">
+        <h3>📊 Gantt Chart</h3>
+      </div>
+    </div>
+  </div>
+
+  <div id="emptyState" class="empty-state">
+    <div class="empty-state-icon">📋</div>
+    <p>No tasks added yet. Start by adding your first task above!</p>
+  </div>
+</div>
+
+<script>
+let tasks = [];
+let currentTime = 0;
+
+function addTask() {
+  const id = document.getElementById("taskId").value.trim();
+  const arrival = parseInt(document.getElementById("arrivalTime").value);
+  const burst = parseInt(document.getElementById("burstTime").value);
+  const priority = parseInt(document.getElementById("priority").value);
+
+  if (!id || isNaN(arrival) || isNaN(burst) || isNaN(priority) || arrival < 0 || burst < 1 || priority < 1) {
+    showNotification("Please fill all fields with valid values!", "error");
+    return;
+  }
+
+  if (tasks.some(task => task.id === id)) {
+    showNotification("Task ID already exists!", "error");
+    return;
+  }
+
+  tasks.push({
+    id, 
+    arrival, 
+    burst, 
+    priority, 
+    remaining: burst,
+    completed: false,
+    startTime: -1,
+    completionTime: -1,
+    waitingTime: 0,
+    turnaroundTime: 0
+  });
+
+  updateTaskTable();
+  updateStats();
+  clearInputs();
+  showNotification(`Task ${id} added successfully!`, "success");
+  document.getElementById("emptyState").style.display = "none";
+}
+
+function clearInputs() {
+  document.getElementById("taskId").value = "";
+  document.getElementById("arrivalTime").value = "";
+  document.getElementById("burstTime").value = "";
+  document.getElementById("priority").value = "";
+}
+
+function deleteTask(taskId) {
+  tasks = tasks.filter(task => task.id !== taskId);
+  updateTaskTable();
+  updateStats();
+  showNotification(`Task ${taskId} deleted!`, "info");
+  
+  if (tasks.length === 0) {
+    document.getElementById("emptyState").style.display = "block";
+    document.getElementById("resultsSection").style.display = "none";
+  }
+}
+
+function clearAll() {
+  if (tasks.length === 0) return;
+  
+  tasks = [];
+  updateTaskTable();
+  updateStats();
+  document.getElementById("resultsSection").style.display = "none";
+  document.getElementById("emptyState").style.display = "block";
+  showNotification("All tasks cleared!", "info");
+}
+
+function updateTaskTable() {
+  const tbody = document.querySelector("#taskTable tbody");
+  tbody.innerHTML = "";
+  
+  tasks.forEach((task, index) => {
+    const row = document.createElement("tr");
+    row.className = "task-row";
+    row.style.animationDelay = `${index * 0.1}s`;
+    row.innerHTML = `
+      <td><strong>${task.id}</strong></td>
+      <td>${task.arrival}</td>
+      <td>${task.burst}</td>
+      <td>${task.priority}</td>
+      <td><button class="delete-btn" onclick="deleteTask('${task.id}')">Delete</button></td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+function updateStats() {
+  document.getElementById("totalTasks").textContent = tasks.length;
+  
+  if (tasks.length > 0) {
+    const avgBurst = (tasks.reduce((sum, task) => sum + task.burst, 0) / tasks.length).toFixed(1);
+    const avgPriority = (tasks.reduce((sum, task) => sum + task.priority, 0) / tasks.length).toFixed(1);
+    
+    document.getElementById("avgBurst").textContent = avgBurst;
+    document.getElementById("avgPriority").textContent = avgPriority;
+  } else {
+    document.getElementById("avgBurst").textContent = "0";
+    document.getElementById("avgPriority").textContent = "0";
+  }
+}
+
+function runScheduler() {
+  if (tasks.length === 0) { 
+    showNotification("Add some tasks first!", "error"); 
+    return; 
+  }
+
+  const algorithm = document.getElementById("algorithm").value;
+  let scheduled = [];
+
+  switch(algorithm) {
+    case 'priority':
+      scheduled = [...tasks].sort((a, b) => a.priority - b.priority || a.arrival - b.arrival);
+      break;
+    case 'sjf':
+      scheduled = [...tasks].sort((a, b) => a.burst - b.burst || a.arrival - b.arrival);
+      break;
+    case 'fcfs':
+      scheduled = [...tasks].sort((a, b) => a.arrival - b.arrival);
+      break;
+    case 'rr':
+      scheduled = simulateRoundRobin();
+      break;
+  }
+
+  calculateMetrics(scheduled, algorithm);
+  displayResults(scheduled, algorithm);
+  displayGanttChart(scheduled);
+  document.getElementById("resultsSection").style.display = "block";
+  showNotification("Scheduling completed!", "success");
+}
+
+function simulateRoundRobin() {
+  const quantum = 3; // Fixed time quantum
+  let ready = [];
+  let scheduled = [];
+  let currentTime = 0;
+  let tasksCopy = tasks.map(t => ({...t, remaining: t.burst}));
+  
+  while (tasksCopy.some(t => !t.completed)) {
+    // Add newly arrived tasks to ready queue
+    tasksCopy.forEach(task => {
+      if (task.arrival <= currentTime && !task.completed && !ready.includes(task)) {
+        ready.push(task);
+      }
+    });
+    
+    if (ready.length > 0) {
+      let currentTask = ready.shift();
+      let executeTime = Math.min(quantum, currentTask.remaining);
+      
+      if (currentTask.startTime === -1) {
+        currentTask.startTime = currentTime;
+      }
+      
+      currentTask.remaining -= executeTime;
+      currentTime += executeTime;
+      
+      scheduled.push({...currentTask, executeTime, startTime: currentTime - executeTime});
+      
+      if (currentTask.remaining === 0) {
+        currentTask.completed = true;
+        currentTask.completionTime = currentTime;
+      } else {
+        ready.push(currentTask); // Add back to end of queue
+      }
+    } else {
+      currentTime++;
+    }
+  }
+  
+  return scheduled;
+}
+
+function calculateMetrics(scheduled, algorithm) {
+  if (algorithm === 'rr') return; // RR has different calculation
+  
+  let currentTime = 0;
+  
+  scheduled.forEach(task => {
+    if (currentTime < task.arrival) {
+      currentTime = task.arrival;
+    }
+    
+    task.startTime = currentTime;
+    task.completionTime = currentTime + task.burst;
+    task.turnaroundTime = task.completionTime - task.arrival;
+    task.waitingTime = task.turnaroundTime - task.burst;
+    
+    currentTime = task.completionTime;
+  });
+}
+
+function displayResults(scheduled, algorithm) {
+  let resultHTML = `<h3>📋 Execution Order (${algorithm.toUpperCase()})</h3>`;
+  resultHTML += "<table><tr><th>Task</th><th>Arrival</th><th>Burst</th><th>Start</th><th>Completion</th><th>Waiting</th><th>Turnaround</th></tr>";
+  
+  let totalWait = 0, totalTurnaround = 0;
+  
+  scheduled.forEach(t => {
+    if (algorithm !== 'rr' || t.remaining === 0) {
+      totalWait += t.waitingTime || 0;
+      totalTurnaround += t.turnaroundTime || 0;
+      resultHTML += `<tr>
+        <td><strong>${t.id}</strong></td>
+        <td>${t.arrival}</td>
+        <td>${t.burst}</td>
+        <td>${t.startTime || 0}</td>
+        <td>${t.completionTime || 0}</td>
+        <td>${t.waitingTime || 0}</td>
+        <td>${t.turnaroundTime || 0}</td>
+      </tr>`;
+    }
+  });
+  
+  resultHTML += "</table>";
+  document.getElementById("resultsTable").innerHTML = resultHTML;
+  
+  // Display metrics
+  const avgWait = (totalWait / tasks.length).toFixed(2);
+  const avgTurnaround = (totalTurnaround / tasks.length).toFixed(2);
+  
+  document.getElementById("metrics").innerHTML = `
+    <div class="metric">
+      <div class="metric-value">${avgWait}</div>
+      <div class="metric-label">Avg Waiting Time</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value">${avgTurnaround}</div>
+      <div class="metric-label">Avg Turnaround Time</div>
+    </div>
+  `;
+}
+
+function displayGanttChart(scheduled) {
+  const ganttDiv = document.getElementById("gantt");
+  const chartArea = ganttDiv.querySelector(".gantt-header").nextElementSibling || document.createElement("div");
+  chartArea.innerHTML = "";
+  
+  // Create time scale
+  const maxTime = Math.max(...scheduled.map(t => (t.completionTime || t.startTime + t.burst || 0)));
+  let timeScale = "<div class='time-scale'>";
+  for (let i = 0; i <= maxTime; i++) {
+    timeScale += `<div class='time-unit'>${i}</div>`;
+  }
+  timeScale += "</div>";
+  chartArea.innerHTML = timeScale;
+  
+  scheduled.forEach((t, index) => {
+    const bar = document.createElement("div");
+    bar.className = "bar";
+    const width = (t.executeTime || t.burst) * 40;
+    bar.style.width = width + "px";
+    
+    const hue = (index * 360 / scheduled.length) % 360;
+    bar.style.background = `linear-gradient(45deg, hsl(${hue}, 70%, 50%), hsl(${hue + 30}, 70%, 60%))`;
+    bar.innerText = `${t.id} (${t.executeTime || t.burst})`;
+    
+    chartArea.appendChild(bar);
+  });
+  
+  ganttDiv.appendChild(chartArea);
+}
+
+function showNotification(message, type) {
+  const notification = document.createElement("div");
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    z-index: 1000;
+    animation: slideInRight 0.3s ease;
+    max-width: 300px;
+  `;
+  
+  const colors = {
+    success: 'linear-gradient(45deg, #4CAF50, #45a049)',
+    error: 'linear-gradient(45deg, #f44336, #da190b)',
+    info: 'linear-gradient(45deg, #2196F3, #0b7dda)'
+  };
+  
+  notification.style.background = colors[type] || colors.info;
+  notification.textContent = message;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.style.animation = "slideOutRight 0.3s ease";
+    setTimeout(() => document.body.removeChild(notification), 300);
+  }, 3000);
+}
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideInRight {
+    from { transform: translateX(300px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slideOutRight {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(300px); opacity: 0; }
+  }
+`;
+document.head.appendChild(style);
+
+// Initialize empty state
+updateStats();
+</script>
+
+</body>
+</html>
