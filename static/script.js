@@ -115,14 +115,41 @@ function displayResults(scheduled, algo) {
 function displayGanttChart(scheduled) {
   const ganttDiv = document.getElementById("gantt");
   ganttDiv.innerHTML = "<h3>📊 Gantt Chart</h3>";
-  scheduled.forEach((t) => {
+
+  // Container for bars
+  const chartContainer = document.createElement("div");
+  chartContainer.style.display = "flex";
+  chartContainer.style.gap = "5px";
+  chartContainer.style.marginTop = "15px";
+
+  scheduled.forEach((t, i) => {
     const bar = document.createElement("div");
     bar.className = "bar";
-    bar.style.width = ((t.executeTime || t.burst) * 40) + "px";
+
+    // Width proportional to execution/burst time
+    const width = (t.executeTime || t.burst) * 50; // 50px per time unit
+    bar.style.width = width + "px";
+    bar.style.height = "40px";
+    bar.style.display = "flex";
+    bar.style.alignItems = "center";
+    bar.style.justifyContent = "center";
+    bar.style.borderRadius = "8px";
+    bar.style.fontWeight = "600";
+    bar.style.color = "white";
+
+    // 🎨 Give each bar a unique gradient color
+    const hue = (i * 70) % 360; // spread colors around color wheel
+    bar.style.background = `linear-gradient(135deg, hsl(${hue}, 70%, 50%), hsl(${hue + 40}, 70%, 60%))`;
+
+    // Show Task ID inside bar
     bar.innerText = t.id;
-    ganttDiv.appendChild(bar);
+
+    chartContainer.appendChild(bar);
   });
+
+  ganttDiv.appendChild(chartContainer);
 }
+
 
 function showNotification(msg, type) {
   alert(`[${type.toUpperCase()}] ${msg}`);
