@@ -23,4 +23,4 @@ A **web-based task scheduling application** that allows users to add tasks and s
 ## Technologies Used
 
 - **Frontend**: HTML5, CSS3, JavaScript  
-- **Backend (optional)**: Python Flask for serving dynamic content and persistent storage  
+- **Backend**: Python Flask for serving dynamic content and persistent storage  
